@@ -1,11 +1,9 @@
-from flask import Flask, request, send_file
-import pandas as pd
-import numpy as np
 import tensorflow as tf
-from io import StringIO
+import numpy as np
+import pandas as pd
+from flask import Flask, request, jsonify
 import os
-
-SEQUENCE_LENGTH = 50  # Il modello si aspetta sequenze di 50 timestep
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
@@ -14,81 +12,62 @@ print("Caricamento modello...")
 model = tf.keras.models.load_model("model_lstm.h5", custom_objects={'mse': tf.keras.losses.MeanSquaredError()})
 print("Modello caricato!")
 
-@app.route("/predict", methods=["POST"])
-
+# Funzione per creare sequenze
 def create_sequences(df, sequence_length):
-    """ Crea sequenze della lunghezza richiesta dal modello """
     sequences = []
-    
     for i in range(len(df) - sequence_length):
-        sequences.append(df[i : i + sequence_length].values)  # Prende i dati in finestre di 50 righe
-    
+        sequences.append(df.iloc[i:i + sequence_length].values)
     return np.array(sequences)
 
-def preprocess_data(csv_data):
-    # Preprocessing dei dati storici delle candele (ad esempio, normalizzazione, creazione di sequenze)
-    df = pd.read_csv(StringIO(csv_data))
-    # Aggiungere il preprocessing desiderato (come normalizzazione e formattazione delle sequenze)
-    return df
+# Funzione per generare timestamp a partire dalla data di inizio
+def generate_timestamps(start_date, num_predictions):
+    timestamps = []
+    for i in range(num_predictions):
+        timestamps.append(int((start_date + timedelta(minutes=i * 5)).timestamp()))  # intervallo di 5 minuti per ogni candela
+    return timestamps
 
-def predict_candles(df):
-    print(df.dtypes)  # Controlla se ci sono colonne di tipo "object"
-    print(df.head())  # Guarda il primo batch di dati
-    global model  # Assumiamo che il modello sia già stato caricato
-
+@app.route("/predict", methods=["POST"])
+def predict():
     try:
-        # Seleziona solo colonne numeriche
-        df = df[['Open', 'High', 'Low', 'Close', 'Volume']].astype(np.float32)
+        file = request.files["file"]
+        df = pd.read_csv(file)
 
-        # Rimuove NaN
+        # Controlla se il DataFrame è vuoto
+        if df.empty:
+            return jsonify({"error": "DataFrame vuoto, impossibile creare sequenze"}), 400
+
+        # Preprocessing
+        df = df[['Open', 'High', 'Low', 'Close', 'Volume']].astype(np.float32)
         df = df.dropna()
 
-        # Creare sequenze di 50 timestep
+        # Creazione delle sequenze
+        SEQUENCE_LENGTH = 50
         X = create_sequences(df, SEQUENCE_LENGTH)
 
         # Controlla se ci sono abbastanza dati
         if X.shape[0] == 0:
-            raise ValueError("Non ci sono abbastanza dati per creare sequenze di 50 timestep!")
+            return jsonify({"error": "Dati insufficienti per creare sequenze"}), 400
 
-        print(f"Forma dell'input per il modello: {X.shape}")  # Dovrebbe essere (N, 50, 5)
-        # Predizione del modello
+        # Predizione
         predictions = model.predict(X)
 
-        return predictions
+        # Genera i timestamp (a partire dall'ultima data del DataFrame)
+        last_timestamp = pd.to_datetime(df.iloc[-1]["Close"]).timestamp()
+        timestamps = generate_timestamps(datetime.fromtimestamp(last_timestamp), len(predictions))
+
+        # Crea un DataFrame per le previsioni
+        pred_df = pd.DataFrame(predictions, columns=["Open", "High", "Low", "Close", "Volume"])
+        pred_df["Timestamp"] = timestamps
+
+        # Esporta il risultato in un file CSV
+        output_filename = "predictions.csv"
+        pred_df = pred_df[['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']]
+        pred_df.to_csv(output_filename, index=False)
+
+        return jsonify({"message": f"Predizioni salvate in {output_filename}"}), 200
 
     except Exception as e:
-        print(f"Errore in predict_candles: {e}")
-        raise
-        
-def create_tradingview_file(predictions):
-    # Creare un file CSV con le predizioni delle candele
-    df = pd.DataFrame(predictions, columns=["Timestamp", "Open", "High", "Low", "Close", "Volume"])
-    output = StringIO()
-    df.to_csv(output, index=False)
-    output.seek(0)
-    return output
+        return jsonify({"error": str(e)}), 500
 
-@app.route('/predict', methods=['POST'])
-def predict():
-    if 'file' not in request.files:
-        return "File not found", 400
-    
-    file = request.files['file']
-    if file.filename == '':
-        return "No selected file", 400
-    
-    # Carica il CSV
-    csv_data = file.read().decode('utf-8')
-    
-    # Preprocessing e predizione
-    df = preprocess_data(csv_data)
-    predictions = predict_candles(df)
-    
-    # Crea il file per TradingView
-    tradingview_file = create_tradingview_file(predictions)
-    
-    # Restituisce il file CSV per TradingView
-    return send_file(tradingview_file, mimetype='text/csv', as_attachment=True, download_name='predictions.csv')
-
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
