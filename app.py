@@ -6,7 +6,7 @@ from io import StringIO
 import os
 
 # Carica il modello
-model = tf.keras.models.load_model('model_lstm.h5')
+model = tf.keras.models.load_model('model_lstm.h5', custom_objects={'mse': tf.keras.losses.MeanSquaredError()})
 
 app = Flask(__name__)
 
