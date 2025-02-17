@@ -5,10 +5,20 @@ import tensorflow as tf
 from io import StringIO
 import os
 
+SEQUENCE_LENGTH = 50  # Il modello si aspetta sequenze di 50 timestep
 # Carica il modello
 model = tf.keras.models.load_model('model_lstm.h5', custom_objects={'mse': tf.keras.losses.MeanSquaredError()})
 
 app = Flask(__name__)
+
+def create_sequences(df, sequence_length):
+    """ Crea sequenze della lunghezza richiesta dal modello """
+    sequences = []
+    
+    for i in range(len(df) - sequence_length):
+        sequences.append(df[i : i + sequence_length].values)  # Prende i dati in finestre di 50 righe
+    
+    return np.array(sequences)
 
 def preprocess_data(csv_data):
     # Preprocessing dei dati storici delle candele (ad esempio, normalizzazione, creazione di sequenze)
@@ -17,25 +27,26 @@ def preprocess_data(csv_data):
     return df
 
 def predict_candles(df):
-    global model  # Assumiamo che il modello sia già stato caricato
     print(df.dtypes)  # Controlla se ci sono colonne di tipo "object"
     print(df.head())  # Guarda il primo batch di dati
+    global model  # Assumiamo che il modello sia già stato caricato
 
     try:
-        # Seleziona solo le colonne numeriche e converte in float
-        df = df.select_dtypes(include=[np.number]).astype(np.float32)
+        # Seleziona solo colonne numeriche
+        df = df[['Open', 'High', 'Low', 'Close', 'Volume']].astype(np.float32)
 
-        # Rimuove righe con valori NaN
+        # Rimuove NaN
         df = df.dropna()
 
-        # Verifica che il DataFrame non sia vuoto
-        if df.empty:
-            raise ValueError("Il DataFrame è vuoto dopo il preprocessing!")
+        # Creare sequenze di 50 timestep
+        X = create_sequences(df, SEQUENCE_LENGTH)
 
-        # Converte il DataFrame in array per TensorFlow
-        X = np.array(df)
+        # Controlla se ci sono abbastanza dati
+        if X.shape[0] == 0:
+            raise ValueError("Non ci sono abbastanza dati per creare sequenze di 50 timestep!")
 
-        # Esegui la predizione
+        print(f"Forma dell'input per il modello: {X.shape}")  # Dovrebbe essere (N, 50, 5)
+        # Predizione del modello
         predictions = model.predict(X)
 
         return predictions
@@ -43,8 +54,7 @@ def predict_candles(df):
     except Exception as e:
         print(f"Errore in predict_candles: {e}")
         raise
-
-
+        
 def create_tradingview_file(predictions):
     # Creare un file CSV con le predizioni delle candele
     df = pd.DataFrame(predictions, columns=["Timestamp", "Open", "High", "Low", "Close", "Volume"])
