@@ -1,6 +1,6 @@
 Flask
 gunicorn
 pandas
-tensorflow
+tensorflow-cpu
 numpy
 requests
