@@ -11,7 +11,7 @@ app = Flask(__name__)
 
 #carica il modello
 print("Caricamento modello...")
-model = tf.keras.models.load_model("model.h5", custom_objects={'mse': tf.keras.losses.MeanSquaredError()})
+model = tf.keras.models.load_model("model_lstm.h5", custom_objects={'mse': tf.keras.losses.MeanSquaredError()})
 print("Modello caricato!")
 
 @app.route("/predict", methods=["POST"])
