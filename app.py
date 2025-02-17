@@ -17,11 +17,33 @@ def preprocess_data(csv_data):
     return df
 
 def predict_candles(df):
-    # Creare le sequenze di input per il modello e fare la predizione
-    # Ad esempio, prendiamo gli ultimi 60 giorni di dati per fare la previsione
-    X = df[-60:].values.reshape(1, 60, len(df.columns))
-    predictions = model.predict(X)
-    return predictions
+    global model  # Assumiamo che il modello sia già stato caricato
+    print(df.dtypes)  # Controlla se ci sono colonne di tipo "object"
+    print(df.head())  # Guarda il primo batch di dati
+
+    try:
+        # Seleziona solo le colonne numeriche e converte in float
+        df = df.select_dtypes(include=[np.number]).astype(np.float32)
+
+        # Rimuove righe con valori NaN
+        df = df.dropna()
+
+        # Verifica che il DataFrame non sia vuoto
+        if df.empty:
+            raise ValueError("Il DataFrame è vuoto dopo il preprocessing!")
+
+        # Converte il DataFrame in array per TensorFlow
+        X = np.array(df)
+
+        # Esegui la predizione
+        predictions = model.predict(X)
+
+        return predictions
+
+    except Exception as e:
+        print(f"Errore in predict_candles: {e}")
+        raise
+
 
 def create_tradingview_file(predictions):
     # Creare un file CSV con le predizioni delle candele
