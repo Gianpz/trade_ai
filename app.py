@@ -1,1 +1,80 @@
-{"metadata":{"kernelspec":{"language":"python","display_name":"Python 3","name":"python3"},"language_info":{"name":"python","version":"3.10.12","mimetype":"text/x-python","codemirror_mode":{"name":"ipython","version":3},"pygments_lexer":"ipython3","nbconvert_exporter":"python","file_extension":".py"},"kaggle":{"accelerator":"none","dataSources":[],"dockerImageVersionId":30886,"isInternetEnabled":false,"language":"python","sourceType":"notebook","isGpuEnabled":false}},"nbformat_minor":4,"nbformat":4,"cells":[{"cell_type":"code","source":"# This Python 3 environment comes with many helpful analytics libraries installed\n# It is defined by the kaggle/python Docker image: https://github.com/kaggle/docker-python\n# For example, here's several helpful packages to load\n\nimport numpy as np # linear algebra\nimport pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)\n\n# Input data files are available in the read-only \"../input/\" directory\n# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory\n\nimport os\nfor dirname, _, filenames in os.walk('/kaggle/input'):\n    for filename in filenames:\n        print(os.path.join(dirname, filename))\n\n# You can write up to 20GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using \"Save & Run All\" \n# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session","metadata":{"_uuid":"8f2839f25d086af736a60e9eeb907d3b93b6e0e5","_cell_guid":"b1076dfc-b9ad-4769-8c92-a6c4dae69d19","trusted":true,"execution":{"iopub.status.busy":"2025-02-18T07:14:35.472283Z","iopub.execute_input":"2025-02-18T07:14:35.472681Z","iopub.status.idle":"2025-02-18T07:14:36.686746Z","shell.execute_reply.started":"2025-02-18T07:14:35.472652Z","shell.execute_reply":"2025-02-18T07:14:36.685545Z"}},"outputs":[],"execution_count":1},{"cell_type":"code","source":"ls","metadata":{"trusted":true,"execution":{"iopub.status.busy":"2025-02-18T07:22:03.099634Z","iopub.execute_input":"2025-02-18T07:22:03.100114Z","iopub.status.idle":"2025-02-18T07:22:03.226858Z","shell.execute_reply.started":"2025-02-18T07:22:03.100075Z","shell.execute_reply":"2025-02-18T07:22:03.225334Z"}},"outputs":[],"execution_count":5}]}
+import argparse
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+import matplotlib.pyplot as plt
+import joblib
+from flask import Flask, request, jsonify
+from tensorflow.keras.models import load_model
+import os
+from datetime import datetime, timedelta
+
+app = Flask(__name__)
+
+#carica il modello
+print("Caricamento modello...")
+model = tf.keras.models.load_model("model.h5")
+scaler = joblib.load('scaler.pkl')
+print("Modello caricato!")
+
+# Creazione dataset
+def create_dataset(data, time_step=10):
+    X = []
+    for i in range(len(data) - time_step - 1):
+        X.append(data[i:(i+time_step), :])
+    return np.array(X)
+
+time_step = 10
+
+@app.route("/predict", methods=["POST"])
+def predict():
+    try:
+        file = request.files["file"]
+        # Caricamento dati e scaler
+        #df = pd.read_csv(file, parse_dates=["Time"])
+        df = pd.read_csv(file)
+        print("file caricato!")
+        df.set_index("Time", inplace=True)
+        print("file set index!")
+        features = ['Open', 'High', 'Low', 'Close', 'Volume']
+        scaled_data = scaler.transform(df[features])
+
+        print(df.head())  # Mostra le prime righe
+        print(df.columns)  # Mostra i nomi delle colonne
+
+        # Controlla se il DataFrame è vuoto
+        if df.empty:
+            return jsonify({"error": "DataFrame vuoto, impossibile creare sequenze"}), 400
+
+        X = create_dataset(scaled_data, time_step)
+        # Previsioni sui dati esistenti
+        predictions = model.predict(X)
+        predictions = scaler.inverse_transform(np.hstack([predictions, np.zeros((predictions.shape[0], 1))]))[:, :-1]
+
+        # Previsione candele future
+        nu = 50
+        future_predictions = np.zeros((nu, 4))
+        last_sequence = X[-1]
+
+        for i in range(nu):
+            new_prediction = model.predict(last_sequence.reshape(1, time_step, X.shape[2]))
+            future_predictions[i] = new_prediction[0]
+            new_sequence = np.roll(last_sequence, -1, axis=0)
+            new_sequence[-1] = np.append(new_prediction[0], [0])
+            last_sequence = new_sequence
+
+        # De-normalizzazione
+        future_predictions = scaler.inverse_transform(np.hstack([future_predictions, np.zeros((nu, 1))]))[:, :-1]
+
+        # Salvataggio delle previsioni future in un file CSV
+        future_df = pd.DataFrame(future_predictions, columns=['Open', 'High', 'Low', 'Close'])
+        future_df.to_csv('flask_resp.csv', index=False)
+        print(f"Previsioni salvate in flask_resp.csv")
+
+        return jsonify({"message": f"Predizioni salvate in flask_resp.csv"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
