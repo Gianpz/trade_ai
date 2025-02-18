@@ -5,3 +5,4 @@ tensorflow-cpu
 numpy
 requests
 joblib
+scikit-learn
