@@ -31,3 +31,14 @@ jobs:
 
       - name: Run Python script
         run: python bot.py
+
+      - name: Configura Git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+
+      - name: Aggiungi e sovrascrivi il file nel repository
+        run: |
+          git add candele.csv  # Sostituisci con il nome del tuo file
+          git commit -m "Aggiornamento automatico del file" || echo "Nessuna modifica da salvare"
+          git push origin main --force  # Sovrascrive il file precedente
