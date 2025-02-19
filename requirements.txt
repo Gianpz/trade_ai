@@ -2,3 +2,4 @@ pandas
 numpy
 joblib
 scikit-learn
+git+https://github.com/StreamAlpha/tvdatafeed.git
