@@ -2,4 +2,4 @@ pandas
 numpy
 joblib
 scikit-learn
-git+https://${{ secrets.GITHUB_TOKEN }}@github.com/StreamAlpha/tvdatafeed.git
+
