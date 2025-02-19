@@ -1,8 +1,5 @@
-Flask
-gunicorn
+tvDatafeed
 pandas
-tensorflow-cpu
 numpy
-requests
 joblib
 scikit-learn
