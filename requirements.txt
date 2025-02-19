@@ -1,4 +1,4 @@
-tvDatafeed
+tvdatafeed
 pandas
 numpy
 joblib
