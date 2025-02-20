@@ -1,7 +1,6 @@
 from tvDatafeed import TvDatafeed, Interval
 import pandas as pd
-import flask as Flask
-
+from flask import Flask
 # 🔹 Crea l'istanza Flask
 app = Flask(__name__)
 
