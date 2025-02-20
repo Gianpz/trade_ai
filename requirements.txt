@@ -3,4 +3,4 @@ requests
 numpy
 joblib
 scikit-learn
-
+tensorflow-cpu
