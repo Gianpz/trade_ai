@@ -34,7 +34,7 @@ def run_bot():
 
 
 # 🔹 Avvio del bot in background
-threading.Thread(target=run_bot, daemon=True).start()
+#threading.Thread(target=run_bot, daemon=True).start()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=10000)  # Render userà Gunicorn per avviarlo
