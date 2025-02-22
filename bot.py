@@ -1,13 +1,5 @@
-from flask import Flask
-import joblib
-import numpy as np
-import pandas as pd
-import os
-from datetime import datetime, timedelta
+from flask import Flask,jsonify
 from tvDatafeed import TvDatafeed, Interval
-import time
-import re
-import subprocess
 
 app = Flask(__name__)
 
