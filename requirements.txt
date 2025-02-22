@@ -5,5 +5,3 @@ requests
 numpy
 joblib
 gunicorn
-scikit-learn
-tensorflow-cpu
