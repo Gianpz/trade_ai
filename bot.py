@@ -1,19 +1,19 @@
-from flask import Flask,jsonify
-from tvDatafeed import TvDatafeed, Interval
+from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-tv = TvDatafeed()
+# Variabile per memorizzare i dati ricevuti
+market_data = {}
 
-@app.route("/dati")
-def get_dati():
-    dati = tv.get_hist(symbol="XAUUSD", exchange="OANDA", interval=Interval.in_15_minute, n_bars=2000)
-    dati.index = dati.index.astype(str)
-    return jsonify(dati.to_dict())
+@app.route('/update', methods=['POST'])
+def update_data():
+    global market_data
+    market_data = request.json  # Salva i dati ricevuti
+    return jsonify({"status": "ok"}), 200
 
-@app.route('/')
-def home():
-    return "vai su /dati"
+@app.route('/data', methods=['GET'])
+def get_data():
+    return jsonify(market_data), 200
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)  # Render usa la porta 10000
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=10000)
