@@ -76,6 +76,8 @@ def fetch_and_process_data():
     df = tv.get_hist(symbol="XAUUSD", exchange="OANDA", interval=Interval.in_15_minute, n_bars=2000)
     df = df.reset_index().rename(columns={'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close', 'volume': 'Volume', 'datetime': 'Date'})
 
+    print(df.tail())
+    
     if IND == "williams":
         df['Williams_%R'] = williams_r(df)
         features = base_features + ['Williams_%R']
