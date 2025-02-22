@@ -8,6 +8,7 @@ tv = TvDatafeed()
 @app.route("/dati")
 def get_dati():
     dati = tv.get_hist(symbol="XAUUSD", exchange="OANDA", interval=Interval.in_15_minute, n_bars=2000)
+    dati.index = dati.index.astype(str)
     return jsonify(dati.to_dict())
 
 @app.route('/')
