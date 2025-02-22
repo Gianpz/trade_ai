@@ -38,13 +38,13 @@ scaler = joblib.load(scaler_path)
 base_features = ['Open', 'High', 'Low', 'Close', 'Volume']
 
 # Funzioni indicatori
-def williams_r(df, period=args.w_len):
+def williams_r(df, period=20):
     high_max = df['High'].rolling(window=period).max()
     low_min = df['Low'].rolling(window=period).min()
     wr = -100 * (high_max - df['Close']) / (high_max - low_min)
     return wr
 
-def atr(df, period=args.a_len):
+def atr(df, period=14):
     high_low = df['High'] - df['Low']
     high_close = np.abs(df['High'] - df['Close'].shift())
     low_close = np.abs(df['Low'] - df['Close'].shift())
