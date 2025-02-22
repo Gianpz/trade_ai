@@ -131,7 +131,7 @@ class Attention(tf.keras.layers.Layer):
     def get_config(self):
         return super().get_config()
 
-model = load_model(args.model_path, custom_objects={'Attention': Attention}, compile=False)
+model = load_model(mp, custom_objects={'Attention': Attention}, compile=False)
 
 def update_predictions():
     while True:
