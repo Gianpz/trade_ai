@@ -2,13 +2,15 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Variabile per memorizzare i dati ricevuti
+# Memorizza i dati per ogni simbolo
 market_data = {}
 
 @app.route('/update', methods=['POST'])
 def update_data():
     global market_data
-    market_data = request.json  # Salva i dati ricevuti
+    data = request.json
+    symbol = data["symbol"]
+    market_data[symbol] = data["candles"]  # Salva le candele più recenti
     return jsonify({"status": "ok"}), 200
 
 @app.route('/data', methods=['GET'])
