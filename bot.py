@@ -33,7 +33,7 @@ def get_candles():
             }
             for index, row in data.iterrows()
         ]
-        return jsonify({"symbol": "BTC/USD", "timeframe": timeframe, "candles": candles}), 200
+        return jsonify({"symbol": "XAUUSD", "timeframe": timeframe, "candles": candles}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
