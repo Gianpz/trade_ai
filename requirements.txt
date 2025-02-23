@@ -1,4 +1,4 @@
-git+https://github.com/baselsm/tvdatafeed.git
+git+https://github.com/xeonvs/tvdatafeed.git
 flask
 yfinance
 pandas
