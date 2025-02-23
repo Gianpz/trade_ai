@@ -10,7 +10,7 @@ def get_candles():
     symbol = "OANDA:XAU_USD"
     timeframe = request.args.get('timeframe', default='15', type=str)
     to_time = int(datetime.now().timestamp())
-    from_time = int((datetime.now() - timedelta(days7)).timestamp())
+    from_time = int((datetime.now() - timedelta(days=7)).timestamp())
     url = f"https://finnhub.io/api/v1/forex/candle?symbol={symbol}&resolution={timeframe}&from={from_time}&to={to_time}&token={api_key}"
     try:
         response = requests.get(url)
