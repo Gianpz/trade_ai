@@ -1,3 +1,4 @@
+git+https://github.com/baselsm/tvdatafeed.git
 flask
 yfinance
 pandas
