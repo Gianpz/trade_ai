@@ -1,32 +1,39 @@
 from flask import Flask, jsonify, request
-import requests
-from datetime import datetime, timedelta
+from tvDatafeed import TvDatafeed, Interval
 
 app = Flask(__name__)
-api_key = "cut6n69r01qrsirl2c80cut6n69r01qrsirl2c8g"
+tv = TvDatafeed()  # O con login: TvDatafeed(username="TUO_USERNAME", password="TUA_PASSWORD")
 
 @app.route('/api/candele', methods=['GET'])
 def get_candles():
-    symbol = "OANDA:XAU_USD"
-    timeframe = request.args.get('timeframe', default='15', type=str)
-    to_time = int(datetime.now().timestamp())
-    from_time = int((datetime.now() - timedelta(days=7)).timestamp())
-    url = f"https://finnhub.io/api/v1/forex/candle?symbol={symbol}&resolution={timeframe}&from={from_time}&to={to_time}&token={api_key}"
+    symbol = request.args.get('symbol', default='XAUUSD', type=str)
+    exchange = request.args.get('exchange', default='OANDA', type=str)
+    timeframe = request.args.get('timeframe', default='15minute', type=str)
+    
+    # Mappa il timeframe dall'input a Interval
+    interval_map = {
+        '1minute': Interval.in_1_minute,
+        '5minute': Interval.in_5_minute,
+        '15minute': Interval.in_15_minute,
+        '30minute': Interval.in_30_minute,
+        '1hour': Interval.in_1_hour
+    }
+    interval = interval_map.get(timeframe, Interval.in_15_minute)
+    
     try:
-        response = requests.get(url)
-        data = response.json()
+        data = tv.get_hist(symbol=symbol, exchange=exchange, interval=interval, n_bars=200)
         candles = [
             {
-                "time": datetime.fromtimestamp(t).strftime('%Y-%m-%d %H:%M:%S'),
-                "open": o,
-                "high": h,
-                "low": l,
-                "close": c,
-                "volume": v
+                "time": index.strftime('%Y-%m-%d %H:%M:%S'),
+                "open": row['open'],
+                "high": row['high'],
+                "low": row['low'],
+                "close": row['close'],
+                "volume": row['volume']
             }
-            for t, o, h, l, c, v in zip(data['t'], data['o'], data['h'], data['l'], data['c'], data['v'])
-        ][-200:]  # Ultime 200 candele
-        return jsonify({"symbol": "XAU/USD", "timeframe": timeframe, "candles": candles}), 200
+            for index, row in data.iterrows()
+        ]
+        return jsonify({"symbol": "BTC/USD", "timeframe": timeframe, "candles": candles}), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
