@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from tvDatafeed import TvDatafeed, Interval
 
 app = Flask(__name__)
-tv = TvDatafeed()  # O con login: TvDatafeed(username="TUO_USERNAME", password="TUA_PASSWORD")
+tv = TvDatafeed()
 
 @app.route('/api/candele', methods=['GET'])
 def get_candles():
