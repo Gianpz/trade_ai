@@ -24,7 +24,8 @@ def get_candles():
 
     try:
         data = tv.get_hist(symbol=symbol, exchange='OANDA', interval=interval_map[timeframe])
-        candles = data[['datetime', 'open', 'high', 'low', 'close', 'volume']].to_dict(orient='records')
+        #candles = data[['datetime', 'open', 'high', 'low', 'close', 'volume']].to_dict(orient='records')
+        candles = [ { "time": index.strftime('%Y-%m-%d %H:%M:%S'), "open": row['open'], "high": row['high'], "low": row['low'], "close": row['close'], "volume": row['volume'] } for index, row in data.iterrows() ]
         return jsonify(candles)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
