@@ -1,41 +1,32 @@
-from flask import Flask, jsonify, request
 from tvDatafeed import TvDatafeed, Interval
 
 app = Flask(__name__)
+
+# Connessione a TradingView
 tv = TvDatafeed()
 
-@app.route('/api/candele', methods=['GET'])
+@app.route('/candles', methods=['GET'])
 def get_candles():
-    symbol = request.args.get('symbol', default='XAUUSD', type=str)
-    exchange = request.args.get('exchange', default='OANDA', type=str)
-    timeframe = request.args.get('timeframe', default='15minute', type=str)
-    
-    # Mappa il timeframe dall'input a Interval
-    interval_map = {
-        '1minute': Interval.in_1_minute,
-        '5minute': Interval.in_5_minute,
-        '15minute': Interval.in_15_minute,
-        '30minute': Interval.in_30_minute,
-        '1hour': Interval.in_1_hour
-    }
-    interval = interval_map.get(timeframe, Interval.in_15_minute)
-    
-    try:
-        data = tv.get_hist(symbol=symbol, exchange=exchange, interval=interval, n_bars=300)
-        candles = [
-            {
-                "time": index.strftime('%Y-%m-%d %H:%M:%S'),
-                "open": row['open'],
-                "high": row['high'],
-                "low": row['low'],
-                "close": row['close'],
-                "volume": row['volume']
-            }
-            for index, row in data.iterrows()
-        ]
-        return jsonify({"symbol": "XAUUSD", "timeframe": timeframe, "candles": candles}), 300
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    symbol = request.args.get('symbol', 'XAUUSD')  # Default: Oro
+    timeframe = request.args.get('timeframe', '15m')  # Default: 15 minuti
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    interval_map = {
+        '1m': Interval.in_1_minute,
+        '5m': Interval.in_5_minute,
+        '15m': Interval.in_15_minute,
+        '1h': Interval.in_1_hour,
+        '1d': Interval.in_daily
+    }
+
+    if timeframe not in interval_map:
+        return jsonify({'error': 'Timeframe non valido'}), 400
+
+    try:
+        data = tv.get_hist(symbol=symbol, exchange='OANDA', interval=interval_map[timeframe])
+        candles = data[['datetime', 'open', 'high', 'low', 'close', 'volume']].to_dict(orient='records')
+        return jsonify(candles)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
