@@ -1,3 +1,4 @@
 git+https://github.com/xeonvs/tvdatafeed.git
 flask
+requests
 gunicorn
