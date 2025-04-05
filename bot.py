@@ -1,4 +1,5 @@
 from tvDatafeed import TvDatafeed, Interval
+from flask import Flask
 
 app = Flask(__name__)
 
