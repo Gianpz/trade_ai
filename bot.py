@@ -32,4 +32,4 @@ def get_candles():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port), se nella chiamata di /candles volessi fare due richieste con tvdatafeed e poi unire i due data risultanti in un unica risposta json
+    app.run(host='0.0.0.0', port=port)
