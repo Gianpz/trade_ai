@@ -26,7 +26,7 @@ def get_candles():
         data = tv.get_hist(symbol=symbol, exchange='OANDA', interval=interval_map[timeframe], n_bars=500)
         #data15 = tv.get_hist(symbol=symbol, exchange='OANDA', interval=Interval.in_15_minute, n_bars=500)
 
-        candles = [ { "time": index.strftime('%Y-%m-%d %H:%M:%S'), "open": row['open'], "high": row['high'], "low": row['low'], "close": row['close'], "volume": row['volume'] } for index, row in data5.iterrows() ]
+        candles = [ { "time": index.strftime('%Y-%m-%d %H:%M:%S'), "open": row['open'], "high": row['high'], "low": row['low'], "close": row['close'], "volume": row['volume'] } for index, row in data.iterrows() ]
         #candles15 = [ { "time": index.strftime('%Y-%m-%d %H:%M:%S'), "open": row['open'], "high": row['high'], "low": row['low'], "close": row['close'], "volume": row['volume'] } for index, row in data15.iterrows() ]
         return jsonify(candles)
         #return jsonify({
