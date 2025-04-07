@@ -23,10 +23,16 @@ def get_candles():
         return jsonify({'error': 'Timeframe non valido'}), 400
 
     try:
-        data = tv.get_hist(symbol=symbol, exchange='OANDA', interval=interval_map[timeframe], n_bars=500)
-        #candles = data[['datetime', 'open', 'high', 'low', 'close', 'volume']].to_dict(orient='records')
-        candles = [ { "time": index.strftime('%Y-%m-%d %H:%M:%S'), "open": row['open'], "high": row['high'], "low": row['low'], "close": row['close'], "volume": row['volume'] } for index, row in data.iterrows() ]
-        return jsonify(candles)
+        data5 = tv.get_hist(symbol=symbol, exchange='OANDA', interval=Interval.in_5_minute, n_bars=500)
+        data15 = tv.get_hist(symbol=symbol, exchange='OANDA', interval=Interval.in_15_minute, n_bars=500)
+
+        candles5 = [ { "time": index.strftime('%Y-%m-%d %H:%M:%S'), "open": row['open'], "high": row['high'], "low": row['low'], "close": row['close'], "volume": row['volume'] } for index, row in data5.iterrows() ]
+        candles15 = [ { "time": index.strftime('%Y-%m-%d %H:%M:%S'), "open": row['open'], "high": row['high'], "low": row['low'], "close": row['close'], "volume": row['volume'] } for index, row in data15.iterrows() ]
+        #return jsonify(candles)
+        return jsonify({
+            "min5" : candles5,
+            "min15" : candles15
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
