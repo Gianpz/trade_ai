@@ -24,18 +24,12 @@ def get_candles():
 
     try:
         data = tv.get_hist(symbol=symbol, exchange='OANDA', interval=interval_map[timeframe], n_bars=500)
-        #data15 = tv.get_hist(symbol=symbol, exchange='OANDA', interval=Interval.in_15_minute, n_bars=500)
-
+        #candles = data[['datetime', 'open', 'high', 'low', 'close', 'volume']].to_dict(orient='records')
         candles = [ { "time": index.strftime('%Y-%m-%d %H:%M:%S'), "open": row['open'], "high": row['high'], "low": row['low'], "close": row['close'], "volume": row['volume'] } for index, row in data.iterrows() ]
-        #candles15 = [ { "time": index.strftime('%Y-%m-%d %H:%M:%S'), "open": row['open'], "high": row['high'], "low": row['low'], "close": row['close'], "volume": row['volume'] } for index, row in data15.iterrows() ]
         return jsonify(candles)
-        #return jsonify({
-        #    "min5" : candles5,
-        #    "min15" : candles15
-        #})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run(host='0.0.0.0', port=port), se nella chiamata di /candles volessi fare due richieste con tvdatafeed e poi unire i due data risultanti in un unica risposta json
